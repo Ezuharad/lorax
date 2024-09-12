@@ -1,0 +1,14 @@
+__pycache__
+.conda
+.ruff_cache
+.venv
+
+.idea
+.vscode
+*.code-workspace
+
+data/*
+!data/.gitkeep
+
+dist/*
+!dist/.gitkeep

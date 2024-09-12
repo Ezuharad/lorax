@@ -1,0 +1,22 @@
+#!/usr/bin/env sh
+# 2024 Steven Chiacchira
+set -eo pipefail
+
+# check formatting and types
+for file in $(git diff --cached --name-only --diff-filter=ACM | grep '\(\.py|\.ipynb\)')
+do
+    ruff check $file
+    pyright $file
+done
+
+# output from Jupyter notebooks
+for file in $(git diff --cached --name-only --diff-filter=ACM | grep '\(\.ipynb\)')
+do
+    jupyter nbconvert --ClearOutputPreprocessor.enabled=True --inplace $file
+done
+
+# format file
+for file in $(git diff --cached --name-only --diff-filter=ACM | grep '\(\.py|\.ipynb\)')
+do
+    ruff format $file
+done

@@ -1,0 +1,58 @@
+[project]
+name = "lorax"
+description = "Detection system for deforestation in the Amazon"
+
+readme = "README.md"
+version = "0.1"
+requires-python= ">=3.12"
+
+dependencies = [
+  "geopandas"
+]
+
+classifiers = [
+  "Programming Language :: Python :: 3.10",
+]
+
+authors = [
+  { name = "Azib Farooq" },
+  { name = "Steven Chiacchira" },
+  { name = "Karim Sammouri" },
+  { name = "Conor O'Loughlin"}
+]
+
+[project.urls]
+Homepage = "https://github.com/Ezuharad/lorax"
+Issues = "https://github.com/Ezuharad/lorax/issues"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.ruff]
+target-version = "py38"
+exclude = [".conda"]
+src = ["notebook", "src"]
+
+extend-include = ["*.ipynb"]
+
+line-length = 79
+
+[tool.ruff.lint]
+select = ["I"]
+ignore = ["F401"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["src"]
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
+
+[tool.pyright]
+pythonVersion = "3.12"
+pythonPlatform = "Linux"
+
+include = ["src", "test", "script"]
+exclude = [".conda", "notebook", "submodule"]
+
+
