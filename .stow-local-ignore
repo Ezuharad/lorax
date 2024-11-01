@@ -1,0 +1,17 @@
+.git
+.githook
+.github
+dist
+latex
+paper
+script
+src
+.gitattributes
+.gitignore
+.stow-local-ignore
+README.md
+environment.yml
+makefile
+pyproject.toml
+requirements.txt
+

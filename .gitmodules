@@ -1,0 +1,3 @@
+[submodule "submodule/SatViT"]
+	path = submodule/SatViT
+	url = https://github.com/antofuller/SatViT.git
