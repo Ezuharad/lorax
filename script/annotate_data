@@ -1,0 +1,147 @@
+#!/usr/bin/env python3
+# 2024 Steven Chiacchira
+"""Simple CLI tool for annotating a dataset's percent deforestation."""
+
+import sys
+
+sys.stdout = sys.stderr
+
+from argparse import ArgumentParser, Namespace
+from pathlib import Path
+from typing import Final
+
+import torch
+from torch import Generator
+from torch.utils.data import DataLoader
+
+from lorax.data import PRODESDataset
+
+
+def validate_args(args: Namespace) -> None:
+    """Validates the arguments in `args`.
+    Validates the arguments in `args`. If errors exist, prints a message to stderr and exits with a nonzero error code.
+
+    Extant error conditions include:
+    * Receiving a nonpositive patch size (psize < 1). (error code 1)
+    * Receiving a multicharacter delimiter (len(delim) != 1). (error code 1)
+    * Receiving a nonexistant x file. (error code 2)
+    * Receiving a nonexistant y file. (error code 2)
+    * Receiving a nonexistant mask file if mask is specified. (error code 2)
+    """
+    if args.psize < 1:
+        print(
+            f"Received invalid patch size {args.patch_size} (expected a positive patch size)",
+            file=sys.stderr,
+        )
+        exit(1)
+    if len(args.delim) != 1:
+        print(
+            f"Received invalid delimiter {args.delim} (expected a delimiter of length 1)",
+            file=sys.stderr,
+        )
+
+    if not args.x.exists():
+        print(f"X file {args.x} does not exist.", file=sys.stderr)
+        exit(2)
+
+    if not args.y.exists():
+        print(f"Y file {args.y} does not exist.", file=sys.stderr)
+        exit(2)
+
+    if args.mask is not None and not args.mask.exists():
+        print(f"Mask file {args.amsk} does not exist.")
+        exit(2)
+
+
+def get_args() -> Namespace:
+    """Returns arguments as passed by the user.
+
+    :returns: a Namespace with the following fields:
+        * x: satellite image file to read
+        * y: classification image file to read
+        * psize: the size of patches used by the dataloader
+        * mask: an optional mask image file to read
+        * delim: the delimiter to use during output
+        * no_headers: boolean value indicating that ouput headers should not be printed
+        * no_cuda: boolean value indicating that CUDA should not be used
+    """
+    parser: Final[ArgumentParser] = ArgumentParser(
+        "annotate_data",
+        usage="annotate_data x y patch-size [--mask mask] [--delim delimiter] [--no-headers] [--no-cuda]",
+        description="Script for annotating a satellite image dataset's percent deforestation by image patch.",
+        epilog="2024 Steven Chiacchira",
+    )
+    parser.add_argument(
+        "x", type=Path, help="Path to the satellite image file to annotate"
+    )
+    parser.add_argument(
+        "y", type=Path, help="Path to the PRODES dataset to use for annotation"
+    )
+    parser.add_argument(
+        "psize",
+        type=int,
+        help="Size of input patches used to calculate annotation patches. Must be a positive integer.",
+    )
+    parser.add_argument(
+        "--mask",
+        "-m",
+        type=Path,
+        help="Path to a mask file to use for annotation.",
+    )
+    parser.add_argument(
+        "--delim",
+        "-d",
+        default="\t",
+        type=str,
+        help="Character delimiter for output data. Should be a single character. Defaults to the tab character (\\t).",
+    )
+    parser.add_argument(
+        "--no-headers",
+        action="store_true",
+        help="Switch for no headers in output",
+    )
+    parser.add_argument(
+        "--no-cuda",
+        action="store_true",
+        help="Switch to force the use of the CPU device if CUDA is available",
+    )
+
+    return parser.parse_args()
+
+
+def main(args: Namespace) -> None:
+    dataset: Final[PRODESDataset] = PRODESDataset(
+        args.psize, args.x, args.y, args.mask
+    )
+    loader: Final[DataLoader] = DataLoader(
+        dataset,
+        generator=Generator(torch.get_default_device()),
+        shuffle=False,
+    )
+
+    if not args.no_headers:
+        print(f"index{args.delim}percent")
+    try:
+        for idx, (_, y) in enumerate(loader):
+            print(
+                f"{idx}   {torch.sum(y == 1).item() / y.numel()}",
+                file=sys.__stdout__,
+            )
+    except IOError:
+        print("An exception occurred reading a file", file=sys.stderr)
+        exit(3)
+
+
+if __name__ == "__main__":
+    args: Final[Namespace] = get_args()
+    validate_args(args)
+    if torch.cuda.is_available() and not args.no_cuda:
+        torch.set_default_device("cuda")
+    else:
+        torch.set_default_device("cpu")
+
+    main(args)
+else:
+    raise ImportError("This module cannot be imported!")
+
+sys.stdout = sys.__stdout__
