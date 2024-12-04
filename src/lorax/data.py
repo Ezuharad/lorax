@@ -37,6 +37,7 @@ class PRODESDataset(Dataset):
         y_file: PathLike,
         mask_file: Optional[PathLike] = None,
         transform: Any = None,
+        selected_indices: Optional[List[int]] = None,
     ) -> None:
         """Creates a new :class:`PRODESDataset`.
 
@@ -46,6 +47,7 @@ class PRODESDataset(Dataset):
         :param y_file: the path to the file containing labels for the input data in a raster format.
         :param mask_file: the optional path to the file containing cloud masks for the input data. Mask data should be `0` where pixels are to be masked out and `1` otherwise.
         :param transform: the optional transform to apply to images.
+        :param selected_indices: an optional list of indices to load.
         """
         super().__init__()
         self.x_file = Path(x_file)
@@ -65,7 +67,17 @@ class PRODESDataset(Dataset):
             self.height = prof["height"]
             self.width = prof["width"]
 
+        self.selected_indices = selected_indices
+
     def __len__(self) -> int:
+        """Returns the number of elements in the dataset.
+
+        Returns the number of patches available in the image, or the number of selected indices.
+
+        :returns: the number of patches available in the image, or the number of selected indices.
+        """
+        if self.selected_indices is not None:
+            return len(self.selected_indices)
         return ((self.height // self.img_size) - 1) * (
             (self.width // self.img_size) - 1
         )
@@ -73,7 +85,7 @@ class PRODESDataset(Dataset):
     def __getitem__(self, index: int) -> Tuple[Tensor, Tensor]:
         """Returns data lazy-loaded from the images at index `index`.
 
-        Data is randomly accessed from patches of an image as shown below:
+        Data is lazily accessed from patches of an image as shown below:
 
         +---+---+---+
         | 0 | 1 | 2 |
@@ -92,8 +104,14 @@ class PRODESDataset(Dataset):
         :param index: the index to access data from.
         :returns: a tuple of (`x_data`, `y_data`)
         """
-        col_offset: Final[int] = (index * self.img_size) % self.width
-        row_offset: Final[int] = (index * self.img_size) // self.width
+
+        if self.selected_indices is not None:
+            _index: int = self.selected_indices[index]
+        else:
+            _index: int = index
+
+        col_offset: Final[int] = (_index * self.img_size) % self.width
+        row_offset: Final[int] = (_index * self.img_size) // self.width
         win: Final[Window] = Window(
             col_offset,  # type: ignore
             row_offset,

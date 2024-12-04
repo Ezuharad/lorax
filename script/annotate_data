@@ -120,7 +120,7 @@ def main(args: Namespace) -> None:
     )
 
     if not args.no_headers:
-        print(f"index{args.delim}percent")
+        print(f"index{args.delim}percent", file=sys.__stdout__)
     try:
         for idx, (_, y) in enumerate(loader):
             print(
