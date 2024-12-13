@@ -1,17 +1,14 @@
 # 2024 Steven Chiacchira
-"""Custom dataset class for reading rasterized PRODES data.
-
-__ISSUES__:
-    * Passing a transform to :class:`PRODESDataset` currently breaks the dataset.
-"""
+"""Custom dataset class for reading rasterized PRODES data."""
 
 from os import PathLike
 from pathlib import Path
-from typing import Any, List, Final, Optional, Tuple, Union
+from typing import Any, Final, List, Optional, Tuple, Union
 
 import rasterio as rio
-import torchvision.transforms as T
 import torch
+import torchvision.transforms as T
+
 from numpy.typing import NDArray
 from rasterio.windows import Window
 from torch import Tensor
@@ -37,7 +34,9 @@ class PRODESDataset(Dataset):
         y_file: PathLike,
         mask_file: Optional[PathLike] = None,
         transform: Any = None,
-        selected_indices: Optional[List[int]] = None,
+        selected_indices: Optional[
+            List[int]
+        ] = None,  # not sure why itertools.compress does not work with these objects
     ) -> None:
         """Creates a new :class:`PRODESDataset`.
 
@@ -111,7 +110,7 @@ class PRODESDataset(Dataset):
             _index: int = index
 
         col_offset: Final[int] = (_index * self.img_size) % self.width
-        row_offset: Final[int] = (_index * self.img_size) // self.width
+        row_offset: Final[int] = ((_index * self.img_size) // self.width) * self.img_size
         win: Final[Window] = Window(
             col_offset,  # type: ignore
             row_offset,

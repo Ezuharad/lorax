@@ -180,7 +180,9 @@ class TransformerEncoderLayer(nn.Module):
         * ReLU
     """
 
-    def __init__(self, embed_dim: int, num_heads: int, hidden_dim: Optional[int]=None):
+    def __init__(
+        self, embed_dim: int, num_heads: int, hidden_dim: Optional[int] = None
+    ):
         """Creates a bew TransformerEncoder Layer.
 
         :param embed_dim: the size of the 1D patch embeddings to be processed by the network.
@@ -228,6 +230,7 @@ class SegmentationDecoderLayer(nn.Module):
                                     +---+---+      +-------+
 
     """
+
     def __init__(
         self, embed_dim: int, patch_size: int, num_classes: int
     ) -> None:
